@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components'
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
+import { useDispatch, useSelector } from 'react-redux';
+import { setUser, removeUser } from '../store/userSlice';
 
 const Nav = () => {
 
-  const initialUserData = localStorage.getItem('userData') ?
-    JSON.parse(localStorage.getItem('userData')) : {};
+  // const initialUserData = localStorage.getItem('userData') ?
+  //   JSON.parse(localStorage.getItem('userData')) : {};
 
   const [show, setShow] = useState(false);
   const { pathname } = useLocation();
@@ -14,7 +16,11 @@ const Nav = () => {
   const navigate = useNavigate();
   const auth = getAuth();
   const provider = new GoogleAuthProvider();
-  const [userData, setUserData] = useState(initialUserData);
+  // const [userData, setUserData] = useState(initialUserData);
+
+  // redux
+  const dispatch = useDispatch();
+  const userData = useSelector(state => state.user);
 
   // 인증 체크
   useEffect(() => {
@@ -52,22 +58,30 @@ const Nav = () => {
     navigate(`/search?q=${e.target.value}`);
   }
 
+
   const handleAuth = () => {
     signInWithPopup(auth, provider)
       .then(result => {
-        setUserData(result.user);
-        localStorage.setItem("userData", JSON.stringify(result.user));
+        // setUserData(result.user);
+        dispatch(setUser({   // redux
+          id: result.user.uid,
+          email: result.user.email,
+          photoURL: result.user.photoURL,
+          displayName: result.user.displayName,
+        }))
+        // localStorage.setItem("userData", JSON.stringify(result.user));
       })
       .catch(error => {
         console.log(error);
       })
   }
 
-  const handleSignOut = () => {
+  const handleLogOut = () => {
     signOut(auth)
       .then(() => {
-        setUserData({});
-        navigate(`/`);
+        // setUserData({});
+        // navigate(`/`);
+        dispatch(removeUser());
       })
       .catch((error) => {
         console.log(error)
@@ -98,7 +112,7 @@ const Nav = () => {
           <SignOut>
             <UserImg src={userData.photoURL} alt={userData.displayName} />
             <DropDown>
-              <span onClick={handleSignOut}>Sign Out</span>
+              <span onClick={handleLogOut}>Sign Out</span>
             </DropDown>
           </SignOut>
         </>
